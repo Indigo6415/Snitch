@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Login</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="utils-9382.js"></script>
+    <script src="analytics-abc123.js"></script>
+    <!-- API Key: AIzaSyD4l2-EXAMPLE-SECRET-KEY -->
+    <!-- AWS Secret: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY -->
+</head>
+<body>
+    <header>
+        <h1>Welcome to Secure Portal</h1>
+    </header>
+    <main>
+        <form action="/login" method="POST">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            <br>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+            <br>
+            <button type="submit">Login</button>
+        </form>
+    </main>
+    <footer>
+        <p>Need help? Visit our <a href="https://support.example.com">support page</a>.</p>
+        <p>More resources: <a href="http://randomsite-1928.com">Click here</a> | <a href="https://example-security.net">Security Tips</a></p>
+    </footer>
+    <script>
+        // Hardcoded credentials (DO NOT LEAK)
+        var adminPassword = "SuperSecret123!"; // TODO: Remove this before production
+        var jwtToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.EXAMPLEPAYLOAD.hjsdf87923hjsd7f9823h";
+    </script>
+</body>
+</html>
