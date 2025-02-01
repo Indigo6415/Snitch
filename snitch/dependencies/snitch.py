@@ -5,42 +5,65 @@ from dependencies.secrets import RegexSnitcher, EntropySnitcher, AISnitcher
 from bs4 import BeautifulSoup
 
 class SnitchEngine:
+    """
+    This class is used to extract information from the content of a URL.
+    """
     def __init__(self, content: SnitchContent, verbose=False) -> None:
         self.content: SnitchContent = content
         self.verbose: bool = verbose
 
     def extract_links(self) -> list[str]:
+        """
+        Exctract links from the content of the URL.
+        """
         if self.verbose:
             print(f"{prefix.info} Extracting links from {prefix.cyan}{self.content.url()}{prefix.reset}")
 
         return self.extract_urls_from_html()
 
     def extract_js(self) -> list[str]:
+        """
+        Extract JS from the content of the URL.
+        """
         if self.verbose:
             print(f"{prefix.info} Extracting JS from {prefix.cyan}{self.content.url()}{prefix.reset}")
 
         return self.extract_js_from_html()
 
-    def extract_secrets(self, regex: bool=True, entropy: bool=True, entropy_threshold: float=4.5, ai: bool=False, ai_threshold: float=0.9) -> None:
+    def extract_secrets(self, regex: bool=True, entropy: bool=True, entropy_threshold: float=4.5, char_limit: int=200, ai: bool=False, ai_threshold: float=0.9) -> dict:
+        """
+        Extract secrets from the content of the URL.
+        """
+        regex_secrets: dict[str, list[str]] = {}
+        entropy_secrets: list[str] = []
+        ai_secrets: list[str] = []
+
         if self.verbose:
             print(f"{prefix.info} Extracting secrets from {prefix.cyan}{self.content.url()}{prefix.reset}")
 
         # Regex
         if regex:
             regex_snitcher = RegexSnitcher(self.content, verbose=self.verbose)
-            print(regex_snitcher.extract_secrets())
+            regex_secrets = regex_snitcher.extract_secrets()
+            for s in regex_secrets:
+                regex_secrets[s] = self.make_unique_list(regex_secrets[s])
         # Entropy
         if entropy:
-            entropy_snitcher = EntropySnitcher(self.content, verbose=self.verbose)
-            print(entropy_snitcher.extract_secrets())
+            entropy_snitcher = EntropySnitcher(self.content, threshold=entropy_threshold, char_limit=char_limit, verbose=self.verbose)
+            entropy_secrets = entropy_snitcher.extract_secrets()
         # AI
         if ai:
             print(f"{prefix.warning} AI secret detection is experimental and may not work as expected.")
             print(f"{prefix.warning} Classification may take a long time based on content length.")
-            ai_snitcher = AISnitcher(self.content, verbose=self.verbose)
-            print(ai_snitcher.extract_secrets())
+            ai_snitcher = AISnitcher(self.content, threshold=ai_threshold, verbose=self.verbose)
+            ai_secrets = ai_snitcher.extract_secrets()
+
+        return {"regex": regex_secrets, "entropy": entropy_secrets, "ai": ai_secrets}
 
     def extract_urls_from_html(self):
+        """
+        Extract URLs from the content of the URL.
+        """
         urls = []
         soup = BeautifulSoup(self.content.text(), "html.parser")
         for a in soup.find_all("a", href=True):
@@ -69,8 +92,6 @@ class SnitchEngine:
             # Check if the script URL is an absolute path
             if url.startswith("http://") or url.startswith("https://"):
                 pass
-
-            # Append the URL of the website to the script URL
             elif url.startswith("//"):
                 url = self.content.url() + url[2:] # remove leading //
             elif url.startswith("/"):
@@ -78,10 +99,7 @@ class SnitchEngine:
             elif url.startswith("./"):
                 url = self.content.url() + url[2:] # remove leading ./
             else:
-                if self.content.url().endswith("/"):
-                    url = self.content.url() + url
-                else:
-                    url = self.content.url() + "/" + url
+                url = self.content.url() + url
 
             if self.verbose:
                 print(f"{prefix.info} Found script: {prefix.yellow}{url}{prefix.reset}")
@@ -89,3 +107,15 @@ class SnitchEngine:
             urls.append(url)
 
         return urls
+
+    def make_unique_list(self, target):
+        """
+        Remove duplicates from a list.
+        """
+        unique_list = []
+        for item in target:
+            if item in unique_list:
+                continue
+            unique_list.append(item)
+
+        return unique_list

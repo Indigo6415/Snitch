@@ -44,17 +44,18 @@ class RegexSnitcher:
         return results
 
 class EntropySnitcher:
-    def __init__(self, content: SnitchContent, verbose=False, threshold=4.5):
+    def __init__(self, content: SnitchContent, verbose=False, threshold=4.5, char_limit=200):
         self.content = content
         self.verbose = verbose
         self.threshold = threshold
+        self.char_limit = char_limit
 
     def extract_secrets(self) -> list[str]:
         if self.verbose:
             print(f"{prefix.info} Extracting secrets using {prefix.magenta}entropy{prefix.reset} from {prefix.cyan}{self.content.url()}{prefix.reset}")
 
         words = re.findall(r"[A-Za-z0-9+/=]{10,}", self.content.text())  # Extract words that look like keys
-        return [word for word in words if self.shannon_entropy(word) > self.threshold]
+        return [word for word in words if self.shannon_entropy(word) > self.threshold and len(word) < self.char_limit]
 
     def shannon_entropy(self, string):
         """Calculate the entropy of a string"""

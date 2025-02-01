@@ -26,6 +26,13 @@ class SnitchContent:
     def cookies(self) -> dict[str, str | None]:
         return {cookie.name: cookie.value for cookie in self.content.cookies}
 
+    def size(self) -> int:
+        return len(self.content.content)
+
+    def describe(self) -> None:
+        print(f"{prefix.info} Status: {self.status()}")
+        print(f"{prefix.info} Size: {self.size()} bytes")
+
 class FetchURL:
     """
     This class is used to fetch the content of a URL.
@@ -53,7 +60,7 @@ class FetchURL:
             "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
         }
 
-    def fetch(self) -> SnitchContent:
+    def fetch(self) -> SnitchContent | None:
         if self.verbose:
             print(f"{prefix.info} Fetching content from {prefix.cyan}{self.url}{prefix.reset}")
 
@@ -67,7 +74,7 @@ class FetchURL:
             if response.status_code != 200:
                 print(f"{prefix.error} Error fetching content from {prefix.cyan}{self.url}{prefix.reset}")
                 print(f"{prefix.error} Status code: {response.status_code}")
-                os._exit(1)
+                return None
 
             print(f"{prefix.ok} Successfully fetched content from {prefix.cyan}{self.url}{prefix.reset}")
             return SnitchContent(response)
