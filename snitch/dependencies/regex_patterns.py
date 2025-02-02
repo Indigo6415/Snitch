@@ -8,7 +8,7 @@ keys = {
     "Google OAuth Access Token": r"ya29\.[0-9A-Za-z\-_]+",
 
     # Microsoft Azure
-    "Azure Storage Account Key": r"[0-9a-zA-Z+\/]{88}",
+    # "Azure Storage Account Key": r"[0-9a-zA-Z+\/]{88}",
     "Azure Client Secret": r"(?i)azure(.{0,20})?['\"][0-9a-zA-Z/+]{25,50}['\"]",
 
     # GitHub
@@ -27,7 +27,7 @@ keys = {
     "Bearer Token": r"Bearer [a-zA-Z0-9-._~+/]{20,}",
 
     # Cryptographic Hashes
-    "MD5 Hash": r"\b[a-fA-F0-9]{32}\b",
+    # "MD5 Hash": r"\b[a-fA-F0-9]{32}\b",
     "SHA-1 Hash": r"\b[a-fA-F0-9]{40}\b",
     "SHA-256 Hash": r"\b[a-fA-F0-9]{64}\b",
     "SHA-512 Hash": r"\b[a-fA-F0-9]{128}\b",

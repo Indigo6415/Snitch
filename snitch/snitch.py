@@ -3,11 +3,13 @@
 from dependencies.snitch import SnitchEngine, SnitchResult
 from dependencies.fetch import FetchURL, SnitchContent
 import dependencies.prefix as prefix
+import time
 
-verbose = False
+verbose = True
 use_headers = False
-recursion_depth = 1
-url = "https://vumc.nl/"
+slow_mode = False
+recursion_depth = 0
+url = "https://example.com/"
 # url = "http://localhost:9999/index.html"
 
 def main():
@@ -23,6 +25,7 @@ def main():
 
         # Only fetch the content of the URL if it has not been fetched before.
         for link in temp_new_links:
+            if slow_mode: time.sleep(1)
             if verbose: print("="*50)
 
             # ==================================================
@@ -61,7 +64,7 @@ def main():
 
 
         # Extract secrets from the content
-        secrets = snitch_engine.extract_secrets(regex=True, entropy=True, entropy_threshold=4.5, char_limit=200, ai=False, ai_threshold=0.9)
+        secrets = snitch_engine.extract_secrets(regex=True, entropy=False, entropy_threshold=4.5, char_limit=200, ai=False, ai_threshold=0.9)
         regex_secrets = secrets["regex"]
         entropy_secrets = secrets["entropy"]
         ai_secrets = secrets["ai"]
