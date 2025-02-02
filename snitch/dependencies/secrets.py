@@ -1,8 +1,9 @@
-from dependencies.fetch import SnitchContent
 import dependencies.prefix as prefix
 from tqdm import tqdm
+import requests
 
 # Used for regex analysis
+import dependencies.regex_patterns as regex_patterns
 import re
 # Used for entropy analysis
 from collections import Counter
@@ -13,38 +14,26 @@ import transformers
 transformers.logging.set_verbosity_error() # Disable those stupid logs
 
 class RegexSnitcher:
-    def __init__(self, content: SnitchContent, verbose=False):
+    def __init__(self, content: requests.Response, verbose=False):
         self.content = content
         self.verbose = verbose
-        self.patterns = {
-            "AWS Access Key": r"AKIA[0-9A-Z]{12,20}",
-            "AWS Secret Key": r"(?i)aws(.{0,20})?['\"][0-9a-zA-Z/+]{30,50}['\"]",
-            "Google API Key": r"AIza[0-9A-Za-z-_]{25,35}",
-            "Slack Token": r"xox[baprs]-([0-9a-zA-Z]{10,48})?",
-            "JWT Token": r"eyJ[a-zA-Z0-9]{20,}\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+",
-            "Basic Auth": r"Basic [a-zA-Z0-9=:_\+/-]{5,100}",
-            "Bearer Token": r"Bearer [a-zA-Z0-9-._~+/]{20,}",
-            "MD5 Hash": r"\b[a-fA-F0-9]{32}\b",
-            "SHA-1 Hash": r"\b[a-fA-F0-9]{40}\b",
-            "SHA-256 Hash": r"\b[a-fA-F0-9]{64}\b",
-            "SHA-512 Hash": r"\b[a-fA-F0-9]{128}\b",
-        }
+        self.patterns = regex_patterns.keys
 
-    def extract_secrets(self) -> dict[str, list[str]]:
-        results = {}
+    def extract_secrets(self) -> list[tuple[str, str]]:
+        results = []
 
         if self.verbose:
-            print(f"{prefix.info} Extracting secrets using {prefix.magenta}regex{prefix.reset} from {prefix.cyan}{self.content.url()}{prefix.reset}")
+            print(f"{prefix.info} Extracting secrets using {prefix.magenta}regex{prefix.reset} from {prefix.cyan}{self.content.url}{prefix.reset}")
 
         for key, pattern in self.patterns.items():
-            matches = re.findall(pattern, self.content.text())
-            if matches:
-                results[key] = matches
+            matches = re.findall(pattern, self.content.text)
+            for match in matches:
+                results.append((key, match))  # Append as tuple (key, match)
 
         return results
 
 class EntropySnitcher:
-    def __init__(self, content: SnitchContent, verbose=False, threshold=4.5, char_limit=200):
+    def __init__(self, content: requests.Response, verbose=False, threshold=4.5, char_limit=200):
         self.content = content
         self.verbose = verbose
         self.threshold = threshold
@@ -52,9 +41,9 @@ class EntropySnitcher:
 
     def extract_secrets(self) -> list[str]:
         if self.verbose:
-            print(f"{prefix.info} Extracting secrets using {prefix.magenta}entropy{prefix.reset} from {prefix.cyan}{self.content.url()}{prefix.reset}")
+            print(f"{prefix.info} Extracting secrets using {prefix.magenta}entropy{prefix.reset} from {prefix.cyan}{self.content.url}{prefix.reset}")
 
-        words = re.findall(r"[A-Za-z0-9+/=]{10,}", self.content.text())  # Extract words that look like keys
+        words = re.findall(r"[A-Za-z0-9+/=]{10,}", self.content.text)  # Extract words that look like keys
         return [word for word in words if self.shannon_entropy(word) > self.threshold and len(word) < self.char_limit]
 
     def shannon_entropy(self, string):
@@ -63,7 +52,7 @@ class EntropySnitcher:
         return -sum(count / lns * math.log2(count / lns) for count in p.values())
 
 class AISnitcher:
-    def __init__(self, content: SnitchContent, verbose=False, threshold=0.9):
+    def __init__(self, content: requests.Response, verbose=False, threshold=0.9):
         self.content = content
         self.verbose = verbose
         self.classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
@@ -73,9 +62,9 @@ class AISnitcher:
     def extract_secrets(self) -> list[str]:
         results = []
         if self.verbose:
-            print(f"{prefix.info} Extracting secrets using {prefix.magenta}AI{prefix.reset} from {prefix.cyan}{self.content.url()}{prefix.reset}")
+            print(f"{prefix.info} Extracting secrets using {prefix.magenta}AI{prefix.reset} from {prefix.cyan}{self.content.url}{prefix.reset}")
 
-        for line in tqdm(self.content.text().split("\n"), desc="Processing lines"):
+        for line in tqdm(self.content.text.split("\n"), desc="Processing lines"):
             if line.strip() == "":
                 continue
             verdict: dict = dict(self.classifier(line, self.labels))

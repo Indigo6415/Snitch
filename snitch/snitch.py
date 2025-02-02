@@ -1,76 +1,79 @@
 #!/usr/bin/env python3
 
-from dependencies.snitch import SnitchEngine
+from dependencies.snitch import SnitchEngine, SnitchResult
 from dependencies.fetch import FetchURL, SnitchContent
 import dependencies.prefix as prefix
 
 verbose = False
 use_headers = False
 recursion_depth = 1
-url = "https://wappalyzer.com/"
+url = "https://vumc.nl/"
 # url = "http://localhost:9999/index.html"
-if not url.endswith("/"):
-    url += "/"
 
 def main():
-    extracted_secrets: dict = {"filtered": [], "unfiltered": []}
-    extracted_content: list[SnitchContent] = []
-    extracted_links: list[str] = []
-    extracted_links.append(url)
-    new_links: list[str] = []
-    new_links.append(url)
+    extracted_secrets: list[SnitchResult] = []
+    snitch_content: SnitchContent = SnitchContent()
+    snitch_content.add_new_link(url)
 
     for recursion in range(0, recursion_depth + 1):
         # Make room for the new new links, not the old links.
-        temp_new_links = new_links.copy()
-        new_links.clear()
+        temp_new_links = snitch_content.new_links.copy()
+        snitch_content.merge_new_and_extracted_links()
+        snitch_content.clear_new_links()
 
-        # Clear the temp links so that they can be filled again.
         # Only fetch the content of the URL if it has not been fetched before.
         for link in temp_new_links:
             if verbose: print("="*50)
 
-            # Fetch the content of a URL
+            # ==================================================
+            # Retrieve the content of a URL
+            # ==================================================
             content = FetchURL(link, use_headers=use_headers, verbose=verbose).fetch()
             if not content:
                 continue
-            content.describe()
-            extracted_content.append(content)
+            # Save extracted content to an array
+            snitch_content.add_extracted_content((link, content))
 
+            # ==================================================
+            # Start snitching using the SnitchEngine
+            # ==================================================
             snitch_engine = SnitchEngine(content, verbose=verbose)
 
             # Extract links from the content
             links = snitch_engine.extract_links()
-            new_links.extend(links)
-            extracted_links.extend(links)
+            # Save new links to array
+            snitch_content.add_new_link(links)
             if not links and verbose:
-                print(f"{prefix.warning} No links found in {prefix.cyan}{content.url()}{prefix.reset}")
+                print(f"{prefix.warning} No links found in {prefix.cyan}{content.url}{prefix.reset}")
 
             # Extract JS from the content
             js = snitch_engine.extract_js()
-            new_links.extend(js)
-            extracted_links.extend(js)
-            if not new_links and verbose:
-                print(f"{prefix.warning} No JavaScript files found in {prefix.cyan}{content.url()}{prefix.reset}")
-
-    # Remove any duplicates from the extracted content
-    unique_content: list[SnitchContent] = []
-    for content in extracted_content:
-        if content in unique_content:
-            continue
-        unique_content.append(content)
+            # Save new JS links to array
+            snitch_content.add_new_link(js)
+            if not js and verbose:
+                print(f"{prefix.warning} No JavaScript files found in {prefix.cyan}{content.url}{prefix.reset}")
 
     if verbose: print("="*50)
 
     # Extract secrets from the content
-    for content in unique_content:
-        snitch_engine = SnitchEngine(content, verbose=False)
+    for content in snitch_content.extracted_content:
+        snitch_engine = SnitchEngine(content[1], verbose=False)
+
 
         # Extract secrets from the content
         secrets = snitch_engine.extract_secrets(regex=True, entropy=True, entropy_threshold=4.5, char_limit=200, ai=False, ai_threshold=0.9)
-        extracted_secrets["filtered"].extend(secrets["regex"].values())
-        extracted_secrets["unfiltered"].extend(secrets["entropy"])
-        extracted_secrets["unfiltered"].extend(secrets["ai"])
+        regex_secrets = secrets["regex"]
+        entropy_secrets = secrets["entropy"]
+        ai_secrets = secrets["ai"]
+
+        for secret in regex_secrets: # Dictionary in a list
+            extracted_secrets.append(SnitchResult(content[0], "Regex", secret[0], secret[1]))
+
+        for secret in entropy_secrets: # Normal list
+            extracted_secrets.append(SnitchResult(content[0], "Entropy", "Unknown", secret))
+
+        for secret in ai_secrets: # Normal list
+            extracted_secrets.append(SnitchResult(content[0], "AI", "Unknown", secret))
 
     # Remove any duplicates from the extracted secrets
     # unique_secrets: list = []
@@ -79,10 +82,12 @@ def main():
     #         continue
     #     unique_secrets.append(content)
 
-    print(extracted_secrets)
-
-    # for secret in extracted_secrets:
-    #     print(secret.value())
+    for secret in extracted_secrets:
+        print(f"Location: {prefix.yellow}{secret.location}{prefix.reset}")
+        print(f"Method: {prefix.cyan}{secret.method}{prefix.reset}")
+        print(f"Type: {prefix.red}{secret.type}{prefix.reset}")
+        print(f"Secret: {prefix.green}{secret.secret}{prefix.reset}")
+        print()
 
 
 
