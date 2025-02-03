@@ -1,8 +1,12 @@
 import dependencies.prefix as prefix
 from dependencies.secrets import RegexSnitcher, EntropySnitcher, AISnitcher
 
+from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
+import tldextract
 import requests
+
+import re
 
 class SnitchResult:
     def __init__(self, location: str, method: str, type: str, secret: str) -> None:
@@ -18,6 +22,7 @@ class SnitchEngine:
     def __init__(self, content: requests.Response, verbose=False) -> None:
         self.content: requests.Response = content
         self.verbose: bool = verbose
+        self.hostname: str = self.get_main_domain(content.url)
 
     def extract_links(self) -> list[str]:
         """
@@ -68,25 +73,70 @@ class SnitchEngine:
 
         return {"regex": regex_secrets, "entropy": entropy_secrets, "ai": ai_secrets}
 
+    # def extract_urls_from_html(self):
+    #     """
+    #     Extract URLs from the content of the URL.
+    #     """
+    #     urls = []
+    #     # Use BeautifulSoup to parse the HTML content
+    #     soup = BeautifulSoup(self.content.text, "html.parser")
+    #     for a in soup.find_all("a", href=True):
+    #         # Skip external links
+    #         if self.hostname not in a["href"]:
+    #             pass
+    #             # continue
+
+    #         if self.verbose:
+    #             print(f"{prefix.info} Found link: {prefix.cyan}{a['href']}{prefix.reset}")
+
+    #         urls.append(a["href"])
+
+    #     return urls
+
+
     def extract_urls_from_html(self):
         """
         Extract URLs from the content of the URL.
         """
         urls = []
-        # Use BeautifulSoup to parse the HTML content
         soup = BeautifulSoup(self.content.text, "html.parser")
+
+        # Extract the main domain of the base URL
+        base_domain = tldextract.extract(self.content.url).registered_domain
+
         for a in soup.find_all("a", href=True):
-            # Skip external links
-            if self.content.url not in a["href"]:
-                # pass
+            link = a["href"]
+
+            # Convert relative URLs to absolute
+            link = urljoin(self.content.url, link)
+
+            # Extract the main domain of the link
+            link_domain = tldextract.extract(link).registered_domain
+
+            # Skip external links (allow subdomains)
+            if link_domain != base_domain:
                 continue
 
-            if self.verbose:
-                print(f"{prefix.info} Found link: {prefix.cyan}{a['href']}{prefix.reset}")
+                print(f"{prefix.info} Found link: {prefix.cyan}{link}{prefix.reset}")
 
-            urls.append(a["href"])
+            urls.append(link)
+
+        regex_extracted_urls = self.extract_urls(self.content.text)
+        for re_ex_url in regex_extracted_urls:
+            if self.verbose:
+                print(f"{prefix.info} Found link: {prefix.cyan}{re_ex_url}{prefix.reset}")
+            urls.append(re_ex_url)
 
         return urls
+
+    def extract_urls(self, text):
+        """
+        Extracts all URLs from a given string.
+        """
+        url_pattern = re.compile(
+            r'https?://[^\s<>"]+|www\.[^\s<>"]+|ftp://[^\s<>"]+|[a-zA-Z]+://[^\s<>"]+'
+        )
+        return url_pattern.findall(text)
 
     def extract_js_from_html(self):
         urls = []
@@ -96,7 +146,7 @@ class SnitchEngine:
             url = script["src"]
 
             # Skip external scripts
-            if url.startswith("http") or url.startswith("https"):
+            if url.startswith("http") and self.hostname not in url or url.startswith("https") and self.hostname not in url:
                 continue
 
             # Check if the script URL is an absolute path
@@ -129,3 +179,8 @@ class SnitchEngine:
             unique_list.append(item)
 
         return unique_list
+
+    def get_main_domain(self, url: str) -> str:
+        parsed_url = urlparse(url)
+        extracted = tldextract.extract(parsed_url.netloc)
+        return f"{extracted.domain}.{extracted.suffix}" if extracted.suffix else f"{extracted.domain}"

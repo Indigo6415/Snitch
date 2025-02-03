@@ -37,14 +37,16 @@ def fetch_and_process(link, use_headers, verbose, extracted_secrets, slow_mode):
     if not content:
         return
 
+    with open('content.html', 'w') as f:
+        f.write(content.text)
+
     snitch_engine = SnitchEngine(content, verbose=verbose)
 
     # Extract and store new links and JS files
     links = snitch_engine.extract_links()
     js_files = snitch_engine.extract_js()
 
-    if verbose:
-        print(f"{prefix.info} Extracted {prefix.yellow}{len(links)}{prefix.reset} links and {prefix.yellow}{len(js_files)}{prefix.reset} JavaScript files")
+    print(f"{prefix.info} Extracted {prefix.yellow}{len(links)}{prefix.reset} links and {prefix.yellow}{len(js_files)}{prefix.reset} JavaScript files")
 
     # Extract secrets from the content
     secrets = snitch_engine.extract_secrets(regex=True, entropy=False, entropy_threshold=4.5, char_limit=200, ai=False, ai_threshold=0.9)
@@ -81,6 +83,8 @@ def main():
                 new_links = future.result()
                 if new_links:
                     snitch_content.add_new_link(new_links)
+
+        print(f"{prefix.info} Total extracted links: {prefix.green}{len(snitch_content.extracted_links)}{prefix.reset}")
 
     if verbose:
         print("=" * 50)

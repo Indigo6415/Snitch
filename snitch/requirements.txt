@@ -5,3 +5,4 @@ transformers
 tensorflow
 tf-keras
 tqdm
+tldextract
