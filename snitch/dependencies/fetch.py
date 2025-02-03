@@ -12,8 +12,9 @@ class SnitchContent:
         self.new_links: list[str] = [] # List of new links found in the content
         self.extracted_links: list[str] = [] # List of links extracted from the content
         self.extracted_content: list[tuple[str, requests.Response]] = [] # List of content extracted from the URL
+        self.split_links: list[list[str]] = [] # List of links split into n parts
 
-    def add_new_link(self, link: str | list) -> None:
+    def add_new_link(self, link: str | list[str]) -> None:
         if type(link) is str:
             # Check if the link is already in the new_links list
             if link not in self.new_links:
@@ -39,6 +40,13 @@ class SnitchContent:
 
     def clear_new_links(self) -> None:
         self.new_links.clear()
+
+    def split_targets(self, n: int) -> None:
+        """Splits the targets into n lists as evenly as possible."""
+        if n == 1:
+            return None
+        k, m = divmod(len(self.extracted_links), n)
+        self.split_links = [self.extracted_links[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n)]
 
 
 
@@ -89,4 +97,4 @@ class FetchURL:
         except Exception as e:
             print(f"{prefix.error} Error fetching content from {prefix.cyan}{self.url}{prefix.reset}")
             print(f"{prefix.error} {e}")
-            os._exit(1)
+            return None

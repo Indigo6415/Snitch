@@ -1,0 +1,98 @@
+#!/usr/bin/env python3
+
+from dependencies.snitch import SnitchEngine, SnitchResult
+from dependencies.fetch import FetchURL, SnitchContent
+import dependencies.prefix as prefix
+import argparse
+import time
+import concurrent.futures
+import queue
+
+parser = argparse.ArgumentParser(description="SnitchEngine URL Fetcher")
+parser.add_argument("--url", type=str, default="https://example.com/", help="URL to fetch")
+parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
+parser.add_argument("--use_headers", action="store_true", help="Use headers in fetch requests")
+parser.add_argument("--slow_mode", action="store_true", help="Enable slow mode (1 second delay between requests)")
+parser.add_argument("--recursion_depth", type=int, default=0, help="Set recursion depth")
+parser.add_argument("--threads", type=int, default=5, help="Number of threads to use for fetching")
+
+args = parser.parse_args()
+
+url = args.url
+verbose = args.verbose
+use_headers = args.use_headers
+slow_mode = args.slow_mode
+recursion_depth = args.recursion_depth
+num_threads = args.threads
+
+def fetch_and_process(link, use_headers, verbose, extracted_secrets, slow_mode):
+    """Fetches content, extracts links, JavaScript, and secrets from a given URL."""
+    if slow_mode:
+        time.sleep(1)
+
+    if verbose:
+        print("=" * 50)
+
+    content = FetchURL(link, use_headers=use_headers, verbose=verbose).fetch()
+    if not content:
+        return
+
+    snitch_engine = SnitchEngine(content, verbose=verbose)
+
+    # Extract and store new links and JS files
+    links = snitch_engine.extract_links()
+    js_files = snitch_engine.extract_js()
+
+    if verbose:
+        print(f"{prefix.info} Extracted {prefix.yellow}{len(links)}{prefix.reset} links and {prefix.yellow}{len(js_files)}{prefix.reset} JavaScript files")
+
+    # Extract secrets from the content
+    secrets = snitch_engine.extract_secrets(regex=True, entropy=False, entropy_threshold=4.5, char_limit=200, ai=False, ai_threshold=0.9)
+
+    regex_secrets = secrets["regex"]
+    entropy_secrets = secrets["entropy"]
+    ai_secrets = secrets["ai"]
+
+    for secret in regex_secrets:
+        extracted_secrets.put(SnitchResult(link, "Regex", secret[0], secret[1]))
+
+    for secret in entropy_secrets:
+        extracted_secrets.put(SnitchResult(link, "Entropy", "Unknown", secret))
+
+    for secret in ai_secrets:
+        extracted_secrets.put(SnitchResult(link, "AI", "Unknown", secret))
+
+    return links + js_files  # Return new links for recursion
+
+def main():
+    extracted_secrets = queue.Queue()
+    snitch_content = SnitchContent()
+    snitch_content.add_new_link(url)
+
+    for recursion in range(0, recursion_depth + 1):
+        temp_new_links = snitch_content.new_links.copy()
+        snitch_content.merge_new_and_extracted_links()
+        snitch_content.clear_new_links()
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+            future_to_url = {executor.submit(fetch_and_process, link, use_headers, verbose, extracted_secrets, slow_mode): link for link in temp_new_links}
+
+            for future in concurrent.futures.as_completed(future_to_url):
+                new_links = future.result()
+                if new_links:
+                    snitch_content.add_new_link(new_links)
+
+    if verbose:
+        print("=" * 50)
+
+    # Print extracted secrets
+    while not extracted_secrets.empty():
+        secret = extracted_secrets.get()
+        print(f"Location: {prefix.yellow}{secret.location}{prefix.reset}")
+        print(f"Method: {prefix.cyan}{secret.method}{prefix.reset}")
+        print(f"Type: {prefix.red}{secret.type}{prefix.reset}")
+        print(f"Secret: {prefix.green}{secret.secret}{prefix.reset}")
+        print()
+
+if __name__ == "__main__":
+    main()

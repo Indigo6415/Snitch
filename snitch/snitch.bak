@@ -3,13 +3,24 @@
 from dependencies.snitch import SnitchEngine, SnitchResult
 from dependencies.fetch import FetchURL, SnitchContent
 import dependencies.prefix as prefix
+import argparse
 import time
 
-verbose = True
-use_headers = False
-slow_mode = False
-recursion_depth = 0
-url = "https://example.com/"
+parser = argparse.ArgumentParser(description="SnitchEngine URL Fetcher")
+parser.add_argument("--url", type=str, default="https://example.com/", help="URL to fetch")
+parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
+parser.add_argument("--use_headers", action="store_true", help="Use headers in fetch requests")
+parser.add_argument("--slow_mode", action="store_true", help="Enable slow mode (1 second delay between requests)")
+parser.add_argument("--recursion_depth", type=int, default=0, help="Set recursion depth")
+
+args = parser.parse_args()
+
+url = args.url
+verbose = args.verbose
+use_headers = args.use_headers
+slow_mode = args.slow_mode
+recursion_depth = args.recursion_depth
+
 # url = "http://localhost:9999/index.html"
 
 def main():
@@ -55,6 +66,8 @@ def main():
             snitch_content.add_new_link(js)
             if not js and verbose:
                 print(f"{prefix.warning} No JavaScript files found in {prefix.cyan}{content.url}{prefix.reset}")
+
+            print(f"{prefix.info} Extracted {prefix.yellow}{len(links)}{prefix.reset} links and {prefix.yellow}{len(js)}{prefix.reset} JavaScript files")
 
     if verbose: print("="*50)
 
