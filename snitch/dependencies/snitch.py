@@ -73,26 +73,6 @@ class SnitchEngine:
 
         return {"regex": regex_secrets, "entropy": entropy_secrets, "ai": ai_secrets}
 
-    # def extract_urls_from_html(self):
-    #     """
-    #     Extract URLs from the content of the URL.
-    #     """
-    #     urls = []
-    #     # Use BeautifulSoup to parse the HTML content
-    #     soup = BeautifulSoup(self.content.text, "html.parser")
-    #     for a in soup.find_all("a", href=True):
-    #         # Skip external links
-    #         if self.hostname not in a["href"]:
-    #             pass
-    #             # continue
-
-    #         if self.verbose:
-    #             print(f"{prefix.info} Found link: {prefix.cyan}{a['href']}{prefix.reset}")
-
-    #         urls.append(a["href"])
-
-    #     return urls
-
 
     def extract_urls_from_html(self):
         """
@@ -122,6 +102,7 @@ class SnitchEngine:
             urls.append(link)
 
         regex_extracted_urls = self.extract_urls(self.content.text)
+        # Check for cross-domain links
         for re_ex_url in regex_extracted_urls:
             link_domain = tldextract.extract(re_ex_url).registered_domain
             if re_ex_url != link_domain:

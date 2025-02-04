@@ -9,7 +9,7 @@ import concurrent.futures
 import queue
 
 parser = argparse.ArgumentParser(description="SnitchEngine URL Fetcher")
-parser.add_argument("--url", type=str, default="https://example.com/", help="URL to fetch")
+parser.add_argument("url", type=str, help="URL to fetch")
 parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
 parser.add_argument("--use_headers", action="store_true", help="Use headers in fetch requests")
 parser.add_argument("--slow_mode", action="store_true", help="Enable slow mode (1 second delay between requests)")

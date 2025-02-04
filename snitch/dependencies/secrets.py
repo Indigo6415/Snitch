@@ -71,7 +71,5 @@ class AISnitcher:
             index = verdict["labels"].index("secret")
             if verdict["scores"][index] > self.threshold:
                 results.append(line)
-                print(verdict)
-
 
         return results
