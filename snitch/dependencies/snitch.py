@@ -123,6 +123,9 @@ class SnitchEngine:
 
         regex_extracted_urls = self.extract_urls(self.content.text)
         for re_ex_url in regex_extracted_urls:
+            link_domain = tldextract.extract(re_ex_url).registered_domain
+            if re_ex_url != link_domain:
+                continue
             if self.verbose:
                 print(f"{prefix.info} Found link: {prefix.cyan}{re_ex_url}{prefix.reset}")
             urls.append(re_ex_url)

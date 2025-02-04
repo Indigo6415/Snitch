@@ -27,10 +27,11 @@ keys = {
     "Bearer Token": r"Bearer [a-zA-Z0-9-._~+/]{20,}",
 
     # Cryptographic Hashes
+    # These provide a LOT of results
     # "MD5 Hash": r"\b[a-fA-F0-9]{32}\b",
-    "SHA-1 Hash": r"\b[a-fA-F0-9]{40}\b",
-    "SHA-256 Hash": r"\b[a-fA-F0-9]{64}\b",
-    "SHA-512 Hash": r"\b[a-fA-F0-9]{128}\b",
+    # "SHA-1 Hash": r"\b[a-fA-F0-9]{40}\b",
+    # "SHA-256 Hash": r"\b[a-fA-F0-9]{64}\b",
+    # "SHA-512 Hash": r"\b[a-fA-F0-9]{128}\b",
 
     # PayPal/Braintree
     "PayPal Braintree Access Token": r"access_token\$production\$[0-9a-z]{16}\$[0-9a-f]{32}",

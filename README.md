@@ -15,6 +15,7 @@ Ever wondered what sensitive data might be lurking in a website’s source code?
 3. Close those security gaps before someone else finds them!
 
 ## 📝 To-Do:
+- [x] Introduce multi-threading
 - [ ] Export to CSV
 - [ ] Generate reports
 - [ ] Increase scanning engine
