@@ -3,6 +3,7 @@
 from dependencies.snitch import SnitchEngine, SnitchResult
 from dependencies.fetch import FetchURL, SnitchContent
 import dependencies.prefix as prefix
+# from flask import Flask, request, render_template, redirect
 import argparse
 import time
 import concurrent.futures
@@ -10,11 +11,16 @@ import queue
 
 parser = argparse.ArgumentParser(description="SnitchEngine URL Fetcher")
 parser.add_argument("url", type=str, help="URL to fetch")
-parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
-parser.add_argument("--use_headers", action="store_true", help="Use headers in fetch requests")
-parser.add_argument("--slow_mode", action="store_true", help="Enable slow mode (1 second delay between requests)")
-parser.add_argument("--recursion_depth", type=int, default=0, help="Set recursion depth")
-parser.add_argument("--threads", type=int, default=5, help="Number of threads to use for fetching")
+parser.add_argument("--verbose", action="store_true",
+                    help="Enable verbose output")
+parser.add_argument("--use_headers", action="store_true",
+                    help="Use headers in fetch requests")
+parser.add_argument("--slow_mode", action="store_true",
+                    help="Enable slow mode (1 second delay between requests)")
+parser.add_argument("--recursion_depth", type=int,
+                    default=0, help="Set recursion depth")
+parser.add_argument("--threads", type=int, default=5,
+                    help="Number of threads to use for fetching")
 
 args = parser.parse_args()
 
@@ -24,6 +30,7 @@ use_headers = args.use_headers
 slow_mode = args.slow_mode
 recursion_depth = args.recursion_depth
 num_threads = args.threads
+
 
 def fetch_and_process(link, use_headers, verbose, extracted_secrets, slow_mode):
     """Fetches content, extracts links, JavaScript, and secrets from a given URL."""
@@ -37,7 +44,7 @@ def fetch_and_process(link, use_headers, verbose, extracted_secrets, slow_mode):
     if not content:
         return
 
-    with open('content.html', 'w') as f:
+    with open("content.html", "w") as f:
         f.write(content.text)
 
     snitch_engine = SnitchEngine(content, verbose=verbose)
@@ -49,14 +56,16 @@ def fetch_and_process(link, use_headers, verbose, extracted_secrets, slow_mode):
     print(f"{prefix.info} Extracted {prefix.yellow}{len(links)}{prefix.reset} links and {prefix.yellow}{len(js_files)}{prefix.reset} JavaScript files")
 
     # Extract secrets from the content
-    secrets = snitch_engine.extract_secrets(regex=True, entropy=False, entropy_threshold=4.5, char_limit=200, ai=False, ai_threshold=0.9)
+    secrets = snitch_engine.extract_secrets(
+        regex=True, entropy=False, entropy_threshold=4.5, char_limit=200, ai=False, ai_threshold=0.9)
 
     regex_secrets = secrets["regex"]
     entropy_secrets = secrets["entropy"]
     ai_secrets = secrets["ai"]
 
     for secret in regex_secrets:
-        extracted_secrets.put(SnitchResult(link, "Regex", secret[0], secret[1]))
+        extracted_secrets.put(SnitchResult(
+            link, "Regex", secret[0], secret[1]))
 
     for secret in entropy_secrets:
         extracted_secrets.put(SnitchResult(link, "Entropy", "Unknown", secret))
@@ -65,6 +74,7 @@ def fetch_and_process(link, use_headers, verbose, extracted_secrets, slow_mode):
         extracted_secrets.put(SnitchResult(link, "AI", "Unknown", secret))
 
     return links + js_files  # Return new links for recursion
+
 
 def main():
     extracted_secrets = queue.Queue()
@@ -77,7 +87,8 @@ def main():
         snitch_content.clear_new_links()
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-            future_to_url = {executor.submit(fetch_and_process, link, use_headers, verbose, extracted_secrets, slow_mode): link for link in temp_new_links}
+            future_to_url = {executor.submit(
+                fetch_and_process, link, use_headers, verbose, extracted_secrets, slow_mode): link for link in temp_new_links}
 
             for future in concurrent.futures.as_completed(future_to_url):
                 new_links = future.result()
@@ -97,6 +108,23 @@ def main():
         print(f"Type: {prefix.red}{secret.type}{prefix.reset}")
         print(f"Secret: {prefix.green}{secret.secret}{prefix.reset}")
         print()
+
+
+# def main():
+#     app = Flask(__name__)
+
+#     @app.route('/')
+#     def index():
+#         return redirect('/snitch')
+
+#     @app.route('/snitch')
+#     def fetch_url():
+#         url = request.args.get('url')
+#         print(url)
+#         return render_template('index.html', url=url)
+
+#     app.run(debug=True)
+
 
 if __name__ == "__main__":
     main()

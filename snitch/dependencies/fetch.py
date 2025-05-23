@@ -1,6 +1,5 @@
 import requests
 import dependencies.prefix as prefix
-import os
 
 class SnitchContent:
     """
@@ -17,7 +16,7 @@ class SnitchContent:
     def add_new_link(self, link: str | list[str]) -> None:
         if type(link) is str:
             # Check if the link is already in the new_links list
-            if link not in self.new_links:
+            if link not in self.new_links and link not in self.extracted_links:
                 self.new_links.append(link)
 
         if type(link) is list:
@@ -89,7 +88,7 @@ class FetchURL:
             # Check if the request was successful
             if response.status_code != 200:
                 print(f"{prefix.error} Error fetching content from {prefix.cyan}{self.url}{prefix.reset}")
-                print(f"{prefix.error} Status code: {response.status_code}")
+                print(f"{prefix.error} Status code: {prefix.yellow}{response.status_code}{prefix.reset} (Have you tried using headers?)")
                 return None
 
             print(f"{prefix.ok} Successfully fetched content from {prefix.cyan}{self.url}{prefix.reset}")

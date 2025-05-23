@@ -23,7 +23,7 @@ keys = {
     "JWT Token": r"eyJ[a-zA-Z0-9]{20,}\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+",
 
     # Basic & Bearer Auth
-    "Basic Auth": r"Basic [a-zA-Z0-9=:_\+/-]{5,100}",
+    # "Basic Auth": r"Basic [a-zA-Z0-9=:_\+/-]{5,100}",
     "Bearer Token": r"Bearer [a-zA-Z0-9-._~+/]{20,}",
 
     # Cryptographic Hashes
@@ -85,5 +85,5 @@ keys = {
     "OpenAI API Key": r"sk-[a-zA-Z0-9]{32,48}",
 
     # Custom Tokens
-    "Generic Secret Key": r"(?i)(secret|password|token|key|private|auth|api)[\s:=]{0,5}['\"][0-9a-zA-Z/+]{25,50}['\"]"
+    # "Generic Secret Key": r"(?i)(secret|password|token|key|private|auth|api)[\s:=]{0,5}['\"][0-9a-zA-Z/+]{25,50}['\"]"
 }
