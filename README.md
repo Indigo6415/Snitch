@@ -22,3 +22,8 @@ Ever wondered what sensitive data might be lurking in a website’s source code?
 
 ## 🏴‍☠️ Why "Snitch"?
 Because sometimes, you **need** a snitch—just not the kind that rats you out to the bad guys. 🐀
+
+# How to install?
+1. Git clone this project
+2. Install dependencies using `pip install -r snitch/requirements.txt`
+3. Use snitch `./snitch -h`

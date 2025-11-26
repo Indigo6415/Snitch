@@ -167,6 +167,7 @@ class SnitchEngine:
         """
         Remove duplicates from a list.
         """
+        # Preserve order
         unique_list = []
         for item in target:
             if item in unique_list:
@@ -176,6 +177,7 @@ class SnitchEngine:
         return unique_list
 
     def get_main_domain(self, url: str) -> str:
+        # Extract the main domain from a URL
         parsed_url = urlparse(url)
         extracted = tldextract.extract(parsed_url.netloc)
         return f"{extracted.domain}.{extracted.suffix}" if extracted.suffix else f"{extracted.domain}"

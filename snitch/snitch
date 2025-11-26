@@ -101,13 +101,15 @@ def main():
         print("=" * 50)
 
     # Print extracted secrets
-    while not extracted_secrets.empty():
-        secret = extracted_secrets.get()
-        print(f"Location: {prefix.yellow}{secret.location}{prefix.reset}")
-        print(f"Method: {prefix.cyan}{secret.method}{prefix.reset}")
-        print(f"Type: {prefix.red}{secret.type}{prefix.reset}")
-        print(f"Secret: {prefix.green}{secret.secret}{prefix.reset}")
-        print()
+    if not extracted_secrets.empty():
+        for secret in list(extracted_secrets.queue):
+            print(f"Location: {prefix.yellow}{secret.location}{prefix.reset}")
+            print(f"Method: {prefix.cyan}{secret.method}{prefix.reset}")
+            print(f"Type: {prefix.red}{secret.type}{prefix.reset}")
+            print(f"Secret: {prefix.green}{secret.secret}{prefix.reset}")
+            print()
+    else:
+        print(f"{prefix.info} No secrets found.")
 
 
 # def main():

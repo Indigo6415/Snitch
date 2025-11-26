@@ -1,8 +1,5 @@
 colorama
 requests
 beautifulsoup4
-transformers
-tensorflow
-tf-keras
 tqdm
 tldextract
