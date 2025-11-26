@@ -1,5 +1,5 @@
 import dependencies.prefix as prefix
-from dependencies.secrets import RegexSnitcher, EntropySnitcher, AISnitcher
+from dependencies.secrets import RegexSnitcher, EntropySnitcher
 
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
@@ -8,6 +8,7 @@ import requests
 
 import re
 
+
 class SnitchResult:
     def __init__(self, location: str, method: str, type: str, secret: str) -> None:
         self.location: str = location
@@ -15,10 +16,12 @@ class SnitchResult:
         self.type: str = type
         self.secret: str = secret
 
+
 class SnitchEngine:
     """
     This class is used to extract information from the content of a URL.
     """
+
     def __init__(self, content: requests.Response, verbose=False) -> None:
         self.content: requests.Response = content
         self.verbose: bool = verbose
@@ -29,7 +32,8 @@ class SnitchEngine:
         Exctract links from the content of the URL.
         """
         if self.verbose:
-            print(f"{prefix.info} Extracting links from {prefix.cyan}{self.content.url}{prefix.reset}")
+            print(
+                f"{prefix.info} Extracting links from {prefix.cyan}{self.content.url}{prefix.reset}")
 
         return self.extract_urls_from_html()
 
@@ -38,11 +42,12 @@ class SnitchEngine:
         Extract JS from the content of the URL.
         """
         if self.verbose:
-            print(f"{prefix.info} Extracting JS from {prefix.cyan}{self.content.url}{prefix.reset}")
+            print(
+                f"{prefix.info} Extracting JS from {prefix.cyan}{self.content.url}{prefix.reset}")
 
         return self.extract_js_from_html()
 
-    def extract_secrets(self, regex: bool=True, entropy: bool=True, entropy_threshold: float=4.5, char_limit: int=200, ai: bool=False, ai_threshold: float=0.9) -> dict:
+    def extract_secrets(self, regex: bool = True, entropy: bool = True, entropy_threshold: float = 4.5, char_limit: int = 200, ai: bool = False, ai_threshold: float = 0.9) -> dict:
         """
         Extract secrets from the content of the URL.
         """
@@ -51,7 +56,8 @@ class SnitchEngine:
         ai_secrets: list[str] = []
 
         if self.verbose:
-            print(f"{prefix.info} Extracting secrets from {prefix.cyan}{self.content.url}{prefix.reset}")
+            print(
+                f"{prefix.info} Extracting secrets from {prefix.cyan}{self.content.url}{prefix.reset}")
 
         # Regex
         if regex:
@@ -60,19 +66,22 @@ class SnitchEngine:
             regex_secrets = self.make_unique_list(regex_secrets)
         # Entropy
         if entropy:
-            entropy_snitcher = EntropySnitcher(self.content, threshold=entropy_threshold, char_limit=char_limit, verbose=self.verbose)
+            entropy_snitcher = EntropySnitcher(
+                self.content, threshold=entropy_threshold, char_limit=char_limit, verbose=self.verbose)
             entropy_secrets = entropy_snitcher.extract_secrets()
             entropy_secrets = self.make_unique_list(entropy_secrets)
         # AI
-        if ai:
-            print(f"{prefix.warning} AI secret detection is experimental and may not work as expected.")
-            print(f"{prefix.warning} Classification may take a long time based on content length.")
-            ai_snitcher = AISnitcher(self.content, threshold=ai_threshold, verbose=self.verbose)
-            ai_secrets = ai_snitcher.extract_secrets()
-            ai_secrets = self.make_unique_list(ai_secrets)
+        # if ai:
+        #     print(
+        #         f"{prefix.warning} AI secret detection is experimental and may not work as expected.")
+        #     print(
+        #         f"{prefix.warning} Classification may take a long time based on content length.")
+        #     ai_snitcher = AISnitcher(
+        #         self.content, threshold=ai_threshold, verbose=self.verbose)
+        #     ai_secrets = ai_snitcher.extract_secrets()
+        #     ai_secrets = self.make_unique_list(ai_secrets)
 
         return {"regex": regex_secrets, "entropy": entropy_secrets, "ai": ai_secrets}
-
 
     def extract_urls_from_html(self):
         """
@@ -108,7 +117,8 @@ class SnitchEngine:
             if re_ex_url != link_domain:
                 continue
             if self.verbose:
-                print(f"{prefix.info} Found link: {prefix.cyan}{re_ex_url}{prefix.reset}")
+                print(
+                    f"{prefix.info} Found link: {prefix.cyan}{re_ex_url}{prefix.reset}")
             urls.append(re_ex_url)
 
         return urls
@@ -137,16 +147,17 @@ class SnitchEngine:
             if url.startswith("http://") or url.startswith("https://"):
                 pass
             elif url.startswith("//"):
-                url = self.content.url + url[2:] # remove leading //
+                url = self.content.url + url[2:]  # remove leading //
             elif url.startswith("/"):
-                url = self.content.url + url[1:] # remove leading /
+                url = self.content.url + url[1:]  # remove leading /
             elif url.startswith("./"):
-                url = self.content.url + url[2:] # remove leading ./
+                url = self.content.url + url[2:]  # remove leading ./
             else:
                 url = self.content.url + url
 
             if self.verbose:
-                print(f"{prefix.info} Found script: {prefix.yellow}{url}{prefix.reset}")
+                print(
+                    f"{prefix.info} Found script: {prefix.yellow}{url}{prefix.reset}")
 
             urls.append(url)
 
